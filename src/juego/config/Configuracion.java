@@ -1,41 +1,42 @@
 package juego.config;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Properties;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 
 public class Configuracion {
-    private static Configuracion instancia;
-    private boolean modoDepuracion;
 
-    // Constructor privado para Singleton
-    private Configuracion() {
-        cargarConfiguracion();
-    }
+    private static boolean depuracionActiva;
 
-    // Método Singleton
-    public static Configuracion getInstancia() {
-        if (instancia == null) {
-            instancia = new Configuracion();
-        }
-        return instancia;
-    }
+    static {cargarConfiguracion();}
 
-    // Carga la configuración desde el archivo
-    private void cargarConfiguracion() {
-        Properties propiedades = new Properties();
-        try (FileInputStream entrada = new FileInputStream("config/configuracion.properties")) {
-            propiedades.load(entrada);
-            modoDepuracion = Boolean.parseBoolean(propiedades.getProperty("depuracion", "false"));
+
+    private static void cargarConfiguracion() {
+        depuracionActiva = false;
+
+        // Valor por defecto
+        try {
+            if (Files.exists(Constantes.RUTA_DEPURACION)) {
+                List<String> lineas = Files.readAllLines(Constantes.RUTA_DEPURACION);
+                for (String linea : lineas) {
+                    String[] partes = linea.trim().split("=");
+                    if (partes.length == 2) {
+                        if (partes[0].trim().equalsIgnoreCase("depuracion")) {
+                            depuracionActiva = partes[1].trim().equalsIgnoreCase("true");
+                        }
+                    }
+                }
+            } else {
+                System.out.println("Archivo de configuración no encontrado");
+            }
         } catch (IOException e) {
-            // Si hay error, se asume modo desactivado
-            modoDepuracion = false;
-         //   Log.registrarError("Error al cargar configuración: " + e.getMessage());
+            System.err.println("Error al leer configuración: " + e.getMessage());
         }
     }
 
-    // Verifica si el modo depuración está activado
-    public boolean estaDepuracionActiva() {
-        return modoDepuracion;
+    public static boolean estaDepuracionActiva() {
+        return depuracionActiva;
     }
 }
