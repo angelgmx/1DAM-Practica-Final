@@ -68,7 +68,7 @@ public class LoggerJuego {
 
                 // Construimos el nuevo nombre del archivo
                 Path nuevoNombre = LOG_PATH.resolveSibling("salida.log" + fechaParaNombre);
-                // Renombramos y movemos el archivo
+                // Renombramos o movemos el archivo
                 Files.move(LOG_PATH,nuevoNombre,StandardCopyOption.REPLACE_EXISTING);
             }
         }

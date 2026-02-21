@@ -1,7 +1,6 @@
 package juego.service;
 
 import juego.model.JugadorHumano;
-
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
@@ -15,98 +14,71 @@ public class GestorJugadores {
     }
 
     public void menuJugadores() {
-
         int opcion;
         do {
+            TerminalUtils.printHeader("Gestión de Jugadores");
+            System.out.println(TerminalUtils.YELLOW + "1." + TerminalUtils.RESET + " 📋 Ver registrados");
+            System.out.println(TerminalUtils.YELLOW + "2." + TerminalUtils.RESET + " ➕ Añadir jugador");
+            System.out.println(TerminalUtils.YELLOW + "3." + TerminalUtils.RESET + " ➖ Eliminar jugador");
+            System.out.println(TerminalUtils.YELLOW + "4." + TerminalUtils.RESET + " 🔙 Volver");
+            System.out.print("\nOpción: ");
 
-            System.out.println("== SUBMENU JUGADORES ==");
-            System.out.println("1. Ver jugadores registrados");
-            System.out.println("2. Añadir jugador");
-            System.out.println("3. Eliminar Jugador");
-            System.out.println("4. Volver");
-            System.out.print("Elige una opcion -> ");
-
-           opcion = scanner.nextInt();
-            scanner.nextLine(); // Limpiar buffer
-
+            try {
+                opcion = Integer.parseInt(scanner.nextLine().trim());
+            } catch (NumberFormatException e) {
+                opcion = 0;
+            }
 
             switch (opcion) {
-                case 1:
-                    this.listarJugadores();
-                    break;
-                case 2:
-                    anodirJugador();
-                    break;
-                case 3:
-                   eliminarJugador();
-                   break;
-                case 4:
-                    System.out.println("Hasta pronto!");
-
+                case 1 -> listarJugadores();
+                case 2 -> anodirJugador();
+                case 3 -> eliminarJugador();
+                case 4 -> TerminalUtils.printInfo("Regresando al menú principal...");
+                default -> TerminalUtils.printError("Opción no válida.");
             }
         } while (opcion != 4);
-
     }
 
     public void anodirJugador() {
-        Scanner scanner = new Scanner(System.in);
         boolean nombreValido;
-        String nombre = "";
+        String nombre;
 
         do {
             nombreValido = true;
-
-            System.out.print("-> Ingrese el nombre del Jugador: ");
+            System.out.print("-> Ingrese el nombre del nuevo jugador: ");
             nombre = scanner.nextLine().trim();
 
-            // Validación 1: Nombre no vacío
             if (nombre.isEmpty()) {
-                System.out.println("¡Error! El nombre no puede estar vacío");
+                TerminalUtils.printWarning("El nombre no puede estar vacío.");
+                nombreValido = false;
+            } else if (nombre.matches(".*\\d.*")) {
+                TerminalUtils.printWarning("El nombre no puede contener números.");
+                nombreValido = false;
+            } else if (existeJugador(nombre)) {
+                TerminalUtils.printWarning("El jugador [" + nombre + "] ya existe.");
                 nombreValido = false;
             }
-
-            // Validación 2: Sin números
-            if (nombre.matches(".*\\d.*")) {
-                System.out.println("¡Error! El nombre no puede contener números");
-                nombreValido = false;
-            }
-
-            // Validación 3: Nombre único
-            if (existeJugador(nombre)) {
-                System.out.println("[" + nombre + "]" + " ya existe");
-               nombreValido = false;
-            }
-
-
-
         } while (!nombreValido);
 
         jugadoresHumanos.add(new JugadorHumano(nombre));
-        System.out.println("\n[✅Jugador " + nombre + " añadido con éxito]\n");
-        LoggerJuego.registrar("jugador " + nombre + "añadido con éxito");
-
+        TerminalUtils.printSuccess("Jugador '" + nombre + "' registrado con éxito.");
+        LoggerJuego.registrar("Jugador añadido: " + nombre);
     }
-
 
     public void eliminarJugador() {
         System.out.print("-> Ingrese el nombre del jugador a eliminar: ");
-        String nombre = scanner.nextLine();
+        String nombre = scanner.nextLine().trim();
 
         if (existeJugador(nombre)) {
-            eliminarJugador(nombre);
-            System.out.println("\n[❌Jugador " + nombre + " eliminado]\n");
-            LoggerJuego.registrar("Jugador " + nombre + "eliminado");
+            eliminarPorNombre(nombre);
+            TerminalUtils.printSuccess("Jugador '" + nombre + "' eliminado.");
+            LoggerJuego.registrar("Jugador eliminado: " + nombre);
         } else {
-            System.out.println("⚠️[Jugador no encontrado]\n");
+            TerminalUtils.printError("Jugador no encontrado.");
         }
-
     }
 
-
-    // metodo que busca al el nombre el jugador para ver si existe
     public boolean existeJugador(String nombre) {
-        String nombreBuscado = nombre.trim().toLowerCase();
-
         for (JugadorHumano j : this.jugadoresHumanos) {
             if (j.getNombre().equalsIgnoreCase(nombre.trim())) {
                 return true;
@@ -115,35 +87,23 @@ public class GestorJugadores {
         return false;
     }
 
-    public void eliminarJugador(String nombre) {
-        for (JugadorHumano j : jugadoresHumanos) {
-            if (j.getNombre().equalsIgnoreCase(nombre.trim())) {
-                jugadoresHumanos.remove(j);
-            }
-        }
+    private void eliminarPorNombre(String nombre) {
+        jugadoresHumanos.removeIf(j -> j.getNombre().equalsIgnoreCase(nombre.trim()));
     }
 
     public void listarJugadores() {
-        // si la lista está vacía
         if (jugadoresHumanos.isEmpty()) {
-            System.out.println("\n[No hay jugadores registrados]");
+            TerminalUtils.printInfo("No hay jugadores registrados.");
         } else {
+            System.out.println("\n--- LISTA DE JUGADORES ---");
             for (JugadorHumano j : jugadoresHumanos) {
-                System.out.println("- nombre: " + "[" + j.getNombre() +  " ]" + " - " + j.getPuntuacion() + " Puntos");
+                System.out.println(TerminalUtils.CYAN + " • " + TerminalUtils.RESET + j.getNombre() + " ("
+                        + j.getPuntuacion() + " pts)");
             }
         }
-    }
-
-    private void  importarJugadoresRanking() {
-
     }
 
     public Set<JugadorHumano> getJugadoresHumanos() {
         return jugadoresHumanos;
     }
-
-    public void setJugadoresHumanos(Set<JugadorHumano> jugadoresHumanos) {
-        this.jugadoresHumanos = jugadoresHumanos;
-    }
-
 }

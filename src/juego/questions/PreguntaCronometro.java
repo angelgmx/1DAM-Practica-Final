@@ -1,10 +1,5 @@
 package juego.questions;
 
-import java.io.IOException;
-import java.security.Timestamp;
-import java.sql.Time;
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -15,7 +10,6 @@ public class PreguntaCronometro extends Pregunta {
     private double diferencia;
     private static final Scanner scanner = new Scanner(System.in);
 
-
     public PreguntaCronometro() {
         this(false);
     }
@@ -23,7 +17,7 @@ public class PreguntaCronometro extends Pregunta {
     // Constructor general
     public PreguntaCronometro(boolean esCPU) {
         super(1);
-        this.tiempoObjetivo = new Random().nextInt(1,6); // 1 a 5 segundos
+        this.tiempoObjetivo = new Random().nextInt(1, 6); // 1 a 5 segundos
     }
 
     @Override
