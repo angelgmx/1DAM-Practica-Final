@@ -59,7 +59,7 @@ La arquitectura sigue los principios de la **Programación Orientada a Objetos (
 
 **Ángel Gómez**
 
-- LinkedIn: [angelgmx](https://linkedin.com/in/angelgmx)
+- LinkedIn: [Angel](linkedin.com/in/angelgmx)
 - GitHub: [angelgmx](https://github.com/angelgmx)
 
 ---
