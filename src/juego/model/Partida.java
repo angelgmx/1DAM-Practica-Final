@@ -7,55 +7,39 @@ import juego.questions.GeneradorDePreguntas;
 import juego.questions.Pregunta;
 import juego.questions.PreguntaCronometro;
 import juego.questions.PreguntaAzar;
-import juego.service.Historico;
-import juego.service.LoggerJuego;
-import juego.service.Ranking;
+import juego.service.*;
 import java.io.IOException;
 import java.util.*;
+
 public class Partida {
 
-    /** Número de rondas de la partida */
     private int numRondas;
-    /** Número de jugadores humanos */
     private int numHumanos;
-    /** Número total de jugadores */
     private int numJugadores;
-
-    /** Mapa que almacena los jugadores y sus puntos */
     private Map<Jugador, Integer> jugadores = new HashMap<>();
 
-    /**
-     * Constructor de la clase Partida.
-     * Valida los jugadores registrados, obtiene los jugadores y elige el número de rondas.
-     * @throws NumeroJugadoresInvalidoException si no hay jugadores humanos registrados
-     * @throws IOException si ocurre un error de entrada/salida
-     */
     public Partida() throws NumeroJugadoresInvalidoException, IOException {
         this.validarJugadoresRegistrados();
         this.obtenerJugadores();
         this.elegirRonda();
     }
 
-    /**
-     * Valida que haya jugadores humanos registrados en el sistema.
-     * @throws NumeroJugadoresInvalidoException si no hay jugadores humanos registrados
-     */
     private void validarJugadoresRegistrados() throws NumeroJugadoresInvalidoException {
         if (Juego.gestorJugadores.getJugadoresHumanos().isEmpty()) {
-            throw new NumeroJugadoresInvalidoException("[⚠️No hay jugadores registrados] -> Registra un jugador previamente");
+            throw new NumeroJugadoresInvalidoException("No hay jugadores registrados. Registra uno antes de jugar.");
         }
     }
 
-    /**
-     * Solicita al usuario el número de jugadores y humanos que participarán en la partida.
-     * Valida que los datos sean correctos.
-     */
     public void obtenerJugadores() {
+        TerminalUtils.printHeader("Configuración de Partida");
+
         boolean jugadoresValidos = false;
         do {
-            numJugadores = pedirEntero("¿Cuántos jugadores van a jugar? (" + Constantes.MIN_JUGADORES + "-" + Constantes.MAX_JUGADORES + "): ");
+            numJugadores = pedirEntero("¿Cuántos jugadores participarán? (" + Constantes.MIN_JUGADORES + "-"
+                    + Constantes.MAX_JUGADORES + "): ");
             if (numJugadores < Constantes.MIN_JUGADORES || numJugadores > Constantes.MAX_JUGADORES) {
-                System.out.println("Introduce de " + Constantes.MIN_JUGADORES + " a " + Constantes.MAX_JUGADORES + " Jugadores");
+                TerminalUtils.printWarning("Por favor, introduce entre " + Constantes.MIN_JUGADORES + " y "
+                        + Constantes.MAX_JUGADORES + " jugadores.");
             } else {
                 jugadoresValidos = true;
             }
@@ -63,13 +47,14 @@ public class Partida {
 
         boolean humanosValidos = false;
         do {
-            numHumanos = pedirEntero("¿Cuántos son humanos? (0-" + numJugadores + "): ");
+            numHumanos = pedirEntero("¿Cuántos jugadores son humanos? (0-" + numJugadores + "): ");
             int registrados = Juego.gestorJugadores.getJugadoresHumanos().size();
 
             if (numHumanos < 0 || numHumanos > numJugadores) {
-                System.out.println("❌Numero Inválido de Jugadores");
+                TerminalUtils.printError("Número de humanos inválido.");
             } else if (numHumanos > registrados) {
-                System.out.println("❌No hay suficientes jugadores");
+                TerminalUtils
+                        .printError("No hay suficientes jugadores registrados (Disponibles: " + registrados + ").");
             } else {
                 humanosValidos = true;
             }
@@ -77,34 +62,28 @@ public class Partida {
         crearJugadores();
     }
 
-    /**
-     * Crea y añade los jugadores humanos y CPUs a la partida.
-     * Solicita los nombres de los jugadores humanos y valida que existan y no estén repetidos.
-     */
     public void crearJugadores() {
-        // Crear jugadores Humanos
         for (int i = 0; i < numHumanos; i++) {
             boolean nombreValido = false;
             do {
-                System.out.print("Nombre del jugador humano numero#" + (i + 1) + ": ");
+                System.out.print(TerminalUtils.CYAN + "Nombre del Jugador #" + (i + 1) + ": " + TerminalUtils.RESET);
                 String nombre = Constantes.SCANNER.nextLine().trim();
 
                 if (nombre.isEmpty()) {
-                    System.out.println("El nombre no puede estar vacío");
+                    TerminalUtils.printWarning("El nombre no puede estar vacío.");
                 } else if (Juego.gestorJugadores.existeJugador(nombre)) {
                     if (jugadores.containsKey(new JugadorHumano(nombre))) {
-                        System.out.println("Este jugador ya está en la partida");
+                        TerminalUtils.printWarning("Este jugador ya está en la partida.");
                     } else {
                         jugadores.put(new JugadorHumano(nombre), 0);
                         nombreValido = true;
                     }
                 } else {
-                    System.out.println("[⚠️ Juador no registrado] -> Jugadores disponibles...");
+                    TerminalUtils.printError("Jugador no registrado. Disponibles:");
                     Juego.gestorJugadores.listarJugadores();
                 }
             } while (!nombreValido);
         }
-
 
         int numCPU = numJugadores - numHumanos;
         for (int i = 0; i < numCPU; i++) {
@@ -113,98 +92,79 @@ public class Partida {
         }
     }
 
-    /**
-     * Ejecuta el desarrollo de la partida, gestionando las rondas y turnos de los jugadores.
-     * Registra los resultados y muestra el ranking final.
-     * @throws IOException si ocurre un error de entrada/salida
-     */
     public void jugarPartida() throws IOException {
-        //1.  Ordenamos los jugadores extraidos del mapa
         List<Jugador> jugadoresOrdenados = new ArrayList<>(jugadores.keySet());
         Collections.shuffle(jugadoresOrdenados);
 
-        LoggerJuego.registrar("Inicio de la partida con " + jugadoresOrdenados.size() + " jugadores y " + numRondas + " rondas");
+        LoggerJuego
+                .registrar("Inicio de partida: " + jugadoresOrdenados.size() + " jugadores, " + numRondas + " rondas.");
 
-        //2.  Controlamos el número de rondas del juego
         for (int i = 0; i < numRondas; i++) {
-            System.out.println("\n=== RONDA " + (i + 1) + " ===");
+            TerminalUtils.printHeader("Ronda " + (i + 1) + " / " + numRondas);
             List<Pregunta> preguntasRondaActual = GeneradorDePreguntas.generarPreguntaAleatoria(numJugadores);
 
-            //4 Itera sobre cada jugador en el orden aleatorio establecido anteriormente (Hacemos las preguntas)
-            for (int j = 0; j < jugadoresOrdenados.size(); j++) {
-                Jugador jugadorActual = jugadoresOrdenados.get(j);
-                Pregunta preguntaActual = preguntasRondaActual.removeFirst();
+            for (Jugador jugadorActual : jugadoresOrdenados) {
+                Pregunta preguntaActual = preguntasRondaActual.remove(0);
                 boolean correcto = false;
 
-                System.out.println("\n-> Turno de " + "[" + jugadorActual.getNombre() + "]\n");
+                System.out.println("\n" + TerminalUtils.PURPLE + TerminalUtils.BOLD + ">> TURNO DE: "
+                        + jugadorActual.getNombre().toUpperCase() + " <<" + TerminalUtils.RESET);
+
                 if (jugadorActual.isHuman()) {
-                    String respuesta = "";
                     preguntaActual.mostrarPregunta();
-
-                    if (preguntaActual instanceof PreguntaCronometro) {
-                        respuesta = "";
-                    } else {
-                        respuesta = Constantes.SCANNER.nextLine();
-                    }
-
+                    String respuesta = (preguntaActual instanceof PreguntaCronometro) ? ""
+                            : Constantes.SCANNER.nextLine();
                     correcto = preguntaActual.validarRespuesta(respuesta);
                 } else {
                     correcto = preguntaActual.respuestaCPU();
                 }
 
                 if (correcto) {
-                    jugadores.put(jugadorActual, jugadores.get(jugadorActual) + preguntaActual.getPuntosOtorgados());
-                    System.out.println("[✅+ " + preguntaActual.getPuntosOtorgados() + " Puntos]");
+                    int puntos = preguntaActual.getPuntosOtorgados();
+                    jugadores.put(jugadorActual, jugadores.get(jugadorActual) + puntos);
+                    TerminalUtils.printSuccess("+ " + puntos + " puntos!");
 
-                    // Se le incrementa la racha al jugador actual si acierta
                     jugadorActual.incrementaRacha();
-                    // Si el jugador actual tiene una racha de 3 se le suman +3 puntos
-
-                    if (jugadorActual.getRacha() >= 3){
-                        System.out.println("Has realizado 3 respuestas correctas consecutivas, ¡+5 Puntos extra!");
+                    if (jugadorActual.getRacha() >= 3) {
+                        TerminalUtils.printInfo("¡RACHA ARDIENTE! +5 puntos extra.");
                         jugadores.put(jugadorActual, jugadores.get(jugadorActual) + 5);
-                        // se le resetea la racha
                         jugadorActual.resetRacha();
                     }
-                    // Si la pregunta actual es de pregunta dados se le suma al jugdor el número adivinado
+
                     if (preguntaActual instanceof PreguntaAzar) {
-                        jugadores.put(jugadorActual, jugadores.get(jugadorActual) + ((PreguntaAzar) preguntaActual).getNumeroDado());
+                        int dado = ((PreguntaAzar) preguntaActual).getNumeroDado();
+                        jugadores.put(jugadorActual, jugadores.get(jugadorActual) + dado);
                     }
                 } else {
-                    // Si falla se le resetea la racha
                     jugadorActual.resetRacha();
-                    System.out.println("[No sumas Puntos]");
+                    TerminalUtils.printError("Respuesta incorrecta.");
                 }
             }
-            System.out.println("--- Fin de la ronda " + (i + 1) + " ---\n");
         }
 
-        System.out.println("--FIN DE LA PARTIDA--");
-
+        TerminalUtils.printHeader("Fin de la Partida");
         Ranking.guardarRanking(jugadores);
         Historico.registrarPartida(jugadores);
-        Ranking.mostrarRanking();
 
-        String ganador = Ranking.ganador();
-        System.out.println("El ganador es: " + ganador);
-        LoggerJuego.registrar("Fin de la partida con " + jugadores.size() + " jugadores "+ " y " +  numRondas + "rondas");
+        System.out.println(TerminalUtils.YELLOW + TerminalUtils.BOLD + "¡El ganador es: " + Ranking.ganador() + "!"
+                + TerminalUtils.RESET);
+
+        TerminalUtils.printInfo("Presiona ENTER para volver al menú...");
+        Constantes.SCANNER.nextLine();
+        LoggerJuego.registrar("Fin de la partida.");
     }
 
-    /**
-     * Permite al usuario elegir el tipo de partida y asigna el número de rondas correspondiente.
-     */
     public void elegirRonda() {
         boolean esValida = false;
-
         while (!esValida) {
-            String partida = " ";
-            System.out.println("¿Qué tipo de partida quieres jugar?\n -> (Rápida) (Corta) (Normal) (Larga) <- ");
-            partida = Constantes.SCANNER.nextLine().toUpperCase().trim().replace("Á", "A");
+            System.out.println("\nElija la duración de la partida:");
+            System.out.println(TerminalUtils.CYAN + "   (RAPIDA) -> 3 Rondas");
+            System.out.println("   (CORTA)  -> 5 Rondas");
+            System.out.println("   (NORMAL) -> 10 Rondas");
+            System.out.println("   (LARGA)  -> 20 Rondas" + TerminalUtils.RESET);
+            System.out.print("\nOpción: ");
 
-            if (partida.isEmpty()) {
-                System.out.println("¡Error! Entrada vacía");
-                continue;
-            }
+            String partida = Constantes.SCANNER.nextLine().toUpperCase().trim().replace("Á", "A");
 
             switch (partida) {
                 case "RAPIDA" -> {
@@ -223,47 +183,26 @@ public class Partida {
                     numRondas = 20;
                     esValida = true;
                 }
-                default -> {
-                    System.out.println("\nOpción inválida! Intenta nuevamente");
-                }
+                default -> TerminalUtils.printError("Opción inválida.");
             }
         }
-        System.out.println("[ ⚠️La partida elegida tiene " + "- " + numRondas + " Rondas] \n");
+        TerminalUtils.printInfo("Partida configurada a " + numRondas + " rondas.");
     }
 
-    /**
-     * Solicita al usuario un número entero mostrando un mensaje.
-     * Repite hasta que la entrada sea válida.
-     * @param mensaje Mensaje a mostrar al usuario
-     * @return Número entero introducido por el usuario
-     */
     private int pedirEntero(String mensaje) {
         int numero = 0;
         boolean valido = false;
         do {
             try {
-                System.out.print(mensaje);
+                System.out.print(TerminalUtils.BOLD + mensaje + TerminalUtils.RESET);
                 numero = Constantes.SCANNER.nextInt();
-                Constantes.SCANNER.nextLine(); // Limpiar el buffer
+                Constantes.SCANNER.nextLine();
                 valido = true;
             } catch (InputMismatchException e) {
-                System.out.println("¡Error! Debes introducir un número entero.");
-                Constantes.SCANNER.nextLine(); // Limpiar el buffer
+                TerminalUtils.printError("Debes introducir un número entero.");
+                Constantes.SCANNER.nextLine();
             }
         } while (!valido);
         return numero;
     }
-
-    /**
-     * Muestra por pantalla los jugadores añadidos a la partida.
-     */
-    private void mostrarJugadoresPartida() {
-        System.out.println("\nJugadores añadidos a la partida:");
-        for (Jugador j : jugadores.keySet()) {
-            System.out.println("- " + j.getNombre());
-        }
-    }
 }
-
-
-
