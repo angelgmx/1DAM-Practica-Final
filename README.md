@@ -53,13 +53,6 @@ La arquitectura sigue los principios de la **Programación Orientada a Objetos (
 - `juego.service`: Lógica de negocio (Ranking, Histórico, Gestor de Jugadores).
 - `juego.questions`: Diferentes tipos de preguntas y generadores.
 - `juego.config`: Configuración global y constantes.
-
----
-
-## 🎨 Capturas de Pantalla
-
-_Próximamente..._ (El diseño actual usa colores vibrantes en terminal para distinguir turnos, aciertos y errores).
-
 ---
 
 ## 👤 Autor
