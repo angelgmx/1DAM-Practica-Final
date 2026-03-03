@@ -55,13 +55,6 @@ La arquitectura sigue los principios de la **Programación Orientada a Objetos (
 - `juego.config`: Configuración global y constantes.
 ---
 
-## 👤 Autor
-
-**Ángel Gómez**
-
-- LinkedIn: [Angel](linkedin.com/in/angelgmx)
-- GitHub: [angelgmx](https://github.com/angelgmx)
-
 ---
 
 > _Este proyecto ha sido mejorado y pulido para demostrar habilidades avanzadas en lógica de programación, manejo de colecciones y diseño de interfaces en consola._
